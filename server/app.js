@@ -44,7 +44,8 @@ app.get('/musicians', async (req, res, next) => {
     // End result: { where: { lastName: req.query.lastName } }
     
     // Your code here
-
+    query.where.firstName = req.query.firstName ? {[Op.like]:'%' + req.query.firstName + '%'} : {[Op.like]:'%'}; // 'like' from bonus phase 7
+    query.where.lastName = req.query.lastName ? {[Op.like]:'%' + req.query.lastName + '%'} : {[Op.like]:'%'};
 
     // STEP 2: WHERE clauses on the associated Band model
     // ?bandName=XX
@@ -53,6 +54,17 @@ app.get('/musicians', async (req, res, next) => {
     // End result: { include: [{ model: Band, where: { name: req.query.bandName } }] }
 
     // Your code here
+    if (req.query.bandName) {
+        query.include.push({
+            model: Band,
+            where: { //'like' from bonus step 7
+                name: {[Op.like]:'%' + req.query.bandName + '%'}
+            }            
+        })
+    }
+    if (req.query.bandFields) { // from bonus step 5
+        query.include[0].attributes = req.query.bandFields;
+    }
 
 
     // STEP 3: WHERE Clauses on the associated Instrument model 
@@ -71,7 +83,18 @@ app.get('/musicians', async (req, res, next) => {
     */
 
     // Your code here
-
+        console.log('-------- ',req.query.instrumentTypes);
+        if (req.query.instrumentTypes) {
+            query.include.push({
+                model: Instrument,
+                where: {type: req.query.instrumentTypes },
+                through: { attributes: [] }
+            })
+        }
+        if (req.query.instrumentFields) { // from bonus step 5
+            query.include[1].attributes = req.query.instrumentFields;
+        }
+        
 
     // BONUS STEP 4: Specify Musician attributes to be returned
     // ?&musicianFields[]=XX&musicianFields[]=YY
@@ -83,7 +106,9 @@ app.get('/musicians', async (req, res, next) => {
     // If any other attributes are provided, only include those values
 
     // Your code here
-
+    if (req.query.musicianFields) {
+        query.attributes= req.query.musicianFields        
+    }
 
     // BONUS STEP 5: Specify attributes to be returned
     // These additions should be included in your previously implemented
@@ -120,6 +145,13 @@ app.get('/musicians', async (req, res, next) => {
     // End result: { order: [['firstName', 'asc'], ['lastName'], ['createdAt', 'desc']] }
 
     // Your code here
+    if (req.query.order) {
+        query.order = [req.query.order.map(order2words => {
+            let orderWordsArr = order2words.split(',');
+            return [orderWordsArr[0], orderWordsArr[1]]
+        })]     
+    }
+
 
 
     // Perform compiled query
